@@ -66,7 +66,7 @@ public OnPluginStart() {
 	new arr[1], String:arr_str[1][1];
 	decl Float:vec[3];
 	decl String:buf[1], String:twoDimStrArr[1][1];
-	new var;
+	new aux;
 
 	// File: arrays.inc
 	Array_FindValue(arr, sizeof(arr), 1);
@@ -154,7 +154,7 @@ public OnPluginStart() {
 	Client_SetWeaponPlayerAmmo(0, "");
 	Client_SetWeaponPlayerAmmoEx(0, 0);
 	Client_SetWeaponAmmo(0, "");
-	Client_GetNextWeapon(0, var);
+	Client_GetNextWeapon(0, aux);
 	Client_PrintHintText(0, "");
 	Client_PrintHintTextToAll("");
 	Client_PrintKeyHintText(0, "");
@@ -431,7 +431,7 @@ public OnPluginStart() {
 	// File: teams.inc
 	Team_HaveAllPlayers();
 	Team_GetClientCount(0);
-	Team_GetClientCounts(var, var);
+	Team_GetClientCounts(aux, aux);
 	Team_GetName(0, buf, sizeof(buf));
 	Team_SetName(0, "");
 	Team_GetScore(0);
@@ -459,7 +459,7 @@ public OnPluginStart() {
 	Weapon_IsValid(0);
 	Weapon_Create("", vec, vec);
 	Weapon_CreateForOwner(0, "");
-	Weapon_GetSubType(0, 0);
+	Weapon_GetSubType(0);
 	Weapon_IsReloading(0);
 	Weapon_GetState(0);
 	Weapon_FiresUnderWater(0);

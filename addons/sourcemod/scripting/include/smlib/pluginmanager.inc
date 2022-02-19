@@ -63,14 +63,13 @@ PluginManager_Initialize(const String:prefix[], const String:tag[]="", bool:load
 		AutoExecConfig(true,baseFileName);
 	}
 	
-	Plugin_VersionCvar = PluginManager_CreateConVar("version", Plugin_Version, Plugin_VersionDescription, FCVAR_PLUGIN|FCVAR_DONTRECORD|FCVAR_NOTIFY);
+	Plugin_VersionCvar = PluginManager_CreateConVar("version", Plugin_Version, Plugin_VersionDescription, FCVAR_DONTRECORD|FCVAR_NOTIFY);
 	//override old cvar in case of late load (this is needed to kick the engine in the ass, so it'll broadcast its value again)
 	SetConVarString(Plugin_VersionCvar,Plugin_Version);
 }
 /**
 * Creates a new console variable.
 * Note: You only enter a name and this function will add the prefix you defined in the initialation automatically.
-* The new convar also has FCVAR_PLUGIN as default flag set.
 *
 * @param name				Name of new convar.
 * @param defaultValue		String containing the default value of new convar.
@@ -84,71 +83,10 @@ PluginManager_Initialize(const String:prefix[], const String:tag[]="", bool:load
 */
 stock Handle:PluginManager_CreateConVar(const String:name[], const String:defaultValue[], const String:description[]="", flags=0, bool:hasMin=false, Float:min=0.0, bool:hasMax=false, Float:max=0.0)
 {
-	flags |= FCVAR_PLUGIN;
-
 	decl String:conVarName[256];
 	Format(conVarName, sizeof(conVarName), "%s_%s", Plugin_Prefix, name);
 
 	return CreateConVar(conVarName, defaultValue, description, flags, hasMin, min, hasMax, max);
-}
-
-/**
-* Creates a server-only console command, or hooks an already existing one. Server commands are case sensitive.
-* Note: The new command also has FCVAR_PLUGIN as default flag set.
-*
-* @param cmd				Name of the command to hook or create.
-* @param callback			A function to use as a callback for when the command is invoked.
-* @param description		Optional description to use for command creation.
-* @param minArgs			NOT IMPLEMENTED YET
-* @param usage				NOT IMPLEMENTED YET
-* @param flags				Optional flags to use for command creation.
-* @noreturn
-*/
-stock PluginManager_RegServerCmd(const String:name[], SrvCmd:callback, const String:description[]="", minArgs=0, const String:usage[]="", flags=0)
-{
-	flags |= FCVAR_PLUGIN;
-
-	RegAdminCmd(name, callback, description, flags);
-}
-
-/**
-* Creates a console command, or hooks an already existing one. Console commands are case sensitive. However, if the command already exists in the game, the a client may enter the command in any case. SourceMod corrects for this automatically, and you should only hook the "real" version of the command.
-* Note: The new command also has FCVAR_PLUGIN as default flag set.
-*
-* @param cmd				Name of the command to hook or create.
-* @param callback			A function to use as a callback for when the command is invoked.
-* @param description		Optional description to use for command creation.
-* @param minArgs			NOT IMPLEMENTED YET
-* @param usage				NOT IMPLEMENTED YET
-* @param flags				Optional flags to use for command creation.
-* @noreturn
-*/
-stock PluginManager_RegConsoleCmd(const String:name[], ConCmd:callback, const String:description[]="", minArgs=0, const String:usage[]="", flags=0)
-{
-	flags |= FCVAR_PLUGIN;
-
-	RegConsoleCmd(name, callback, description, flags);
-}
-
-/**
-* Creates a console command as an administrative command. If the command does not exist, it is created. When this command is invoked, the access rights of the player are automatically checked before allowing it to continue. Admin commands are case sensitive from both the client and server.
-* Note: The new command also has FCVAR_PLUGIN as default flag set.
-*
-* @param cmd				String containing command to register.
-* @param callback			A function to use as a callback for when the command is invoked.
-* @param adminflags			Administrative flags (bitstring) to use for permissions.
-* @param description		Optional description to use for help.
-* @param minArgs			NOT IMPLEMENTED YET
-* @param usage				NOT IMPLEMENTED YET
-* @param group				String containing the command group to use.  If empty, the plugin's filename will be used instead.
-* @param flags				Optional console flags.
-* @noreturn
-*/
-stock PluginManager_RegAdminCmd(const String:name[], ConCmd:callback, adminflags, const String:description[]="", minArgs=0, const String:usage[]="", const String:group[]="", flags=0)
-{
-	flags |= FCVAR_PLUGIN;
-	
-	RegAdminCmd(name, callback, adminflags, description, group, flags);
 }
 
 /**

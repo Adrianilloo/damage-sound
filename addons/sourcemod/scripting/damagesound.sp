@@ -152,12 +152,12 @@ public OnPluginStart()
 	// Command Hooks (AddCommandListener) (If the command already exists, like the command kill, then hook it!)
 	
 	
-	// Register New Commands (PluginManager_RegConsoleCmd) (If the command doesn't exist, hook it above!)
-	PluginManager_RegConsoleCmd("sm_damagesound", Command_DamageSoundMenu, "Shows the damagesound menu");
-	PluginManager_RegConsoleCmd("sm_hitsound", Command_DamageSoundMenu, "Shows the damagesound menu");
+	// Register New Commands (If the command doesn't exist, hook it above!)
+	RegConsoleCmd("sm_damagesound", Command_DamageSoundMenu, "Shows the damagesound menu");
+	RegConsoleCmd("sm_hitsound", Command_DamageSoundMenu, "Shows the damagesound menu");
 	
-	// Register Admin Commands (PluginManager_RegAdminCmd)
-	PluginManager_RegAdminCmd("sm_damagesound_test", Command_TestSound, ADMFLAG_ROOT, "Creates a hurt event of the game engine to test the damage sound");
+	// Register Admin Commands
+	RegAdminCmd("sm_damagesound_test", Command_TestSound, ADMFLAG_ROOT, "Creates a hurt event of the game engine to test the damage sound");
 
 	// Cvars: Create a global handle variable.
 	g_cvarEnable = PluginManager_CreateConVar("enable", "1", "Enables or disables this plugin");

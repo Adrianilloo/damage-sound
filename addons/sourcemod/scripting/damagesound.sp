@@ -68,6 +68,8 @@ public Plugin:myinfo = {
 #define MAX_FLOAT_MENU_ENTRYS 13
 #define MAXPITCH 255
 
+#define MENUFLAG_ROOT_HAS_EXITBACK (1 << 10)
+
 /***************************************************************************************
 
 
@@ -394,41 +396,44 @@ public Action:Command_TestSound(client, args)
 public PrefMenu(client, CookieMenuAction:action, any:info, String:buffer[], maxlen){
 	
 	if (action == CookieMenuAction_SelectOption) {
-		ShowDamageSoundMenu(client);
+		ShowDamageSoundMenu(client, MENUFLAG_ROOT_HAS_EXITBACK);
 	}
 }
-public Action:Command_DamageSoundMenu(client,args)
+public Action:Command_DamageSoundMenu(client, args)
 {
-	ShowDamageSoundMenu(client);
+	ShowDamageSoundMenu(client, 0);
 	return Plugin_Handled;
 }
-ShowDamageSoundMenu(client)
+ShowDamageSoundMenu(client, flags)
 {
 	new Handle:menu = CreateMenu(HandleDamageSoundMenu);
-	
 	SetMenuTitle(menu, "Damage Sound Menu\n\nThe Menu shows the\ncurrent settings");
-	
+
+	if (flags & MENUFLAG_ROOT_HAS_EXITBACK) {
+		SetMenuOptionFlags(menu, flags | MENUFLAG_BUTTON_EXITBACK);
+	}
+
 	new String:value[14];
 	new String:buffer[32];
-	  
+
 	//Enable:
 	BoolToString(value, sizeof(value), g_bClient_Enable[client]);
 	Format(buffer, sizeof(buffer), "DamageSound is %s", value);
 	AddMenuItem(menu, "DS-Enable", buffer);
-	
+
 	//Volume:
-	Format(buffer, sizeof(buffer), "Volume: %.0f %", g_flClient_Volume[client]);
+	Format(buffer, sizeof(buffer), "Volume: %.0f%%", g_flClient_Volume[client]);
 	AddMenuItem(menu, "DS-Volume", buffer);
-	
+
 	//Pitch:
 	BoolToString(value, sizeof(value), g_bClient_Pitch[client]);
 	Format(buffer, sizeof(buffer), "Pitch is %s", value);
 	AddMenuItem(menu, "DS-Pitch", buffer);
-	
+
 	//PitchTime:
 	Format(buffer, sizeof(buffer), "PitchResetTime: %.2f", g_flClient_PitchTime[client]);
 	AddMenuItem(menu, "DS-PitchTime", buffer);
-	
+
 	DisplayMenu(menu, client, 90);	
 }
 public HandleDamageSoundMenu(Handle:menu, MenuAction:action, client, param)
@@ -437,113 +442,125 @@ public HandleDamageSoundMenu(Handle:menu, MenuAction:action, client, param)
 		decl String:info[32];
 		decl String:savedValue[8];
 		GetMenuItem(menu, param, info, sizeof(info));
-		
+
 		if(StrEqual(info,"DS-Enable",false)){
-			
 			g_bClient_Enable[client] = !g_bClient_Enable[client];
 			IntToString(g_bClient_Enable[client], savedValue, sizeof(savedValue));
 			if (g_bClientPrefs_Loaded) {
 				SetClientCookie(client, g_cookieEnable, savedValue);
 			}
 			Client_InitializeVariables(client);
-			ShowDamageSoundMenu(client);
+			ShowDamageSoundMenu(client, GetMenuOptionFlags(menu));
 		}
 		else if(StrEqual(info,"DS-Volume",false)){
-			
-			ShowSettingVolumeMenu(client, info, 0.0, 1.0, MAX_FLOAT_MENU_ENTRYS);
+			ShowSettingVolumeMenu(client, menu);
 		}
 		else if(StrEqual(info,"DS-Pitch",false)){
-			
 			g_bClient_Pitch[client] = !g_bClient_Pitch[client];
 			IntToString(g_bClient_Pitch[client], savedValue, sizeof(savedValue));
 			if (g_bClientPrefs_Loaded) {
 				SetClientCookie(client, g_cookiePitch, savedValue);
 			}
 			Client_InitializeVariables(client);
-			ShowDamageSoundMenu(client);
+			ShowDamageSoundMenu(client, GetMenuOptionFlags(menu));
 		}
 		else if(StrEqual(info,"DS-PitchTime",false)){
-			
-			ShowSettingSecondsMenu(client, info, 0.0, 5.0, MAX_FLOAT_MENU_ENTRYS);
+			ShowSettingSecondsMenu(client, menu);
+		}
+	}
+	else if (action == MenuAction_Cancel) {
+		if (param == MenuCancel_ExitBack) {
+			ShowCookieMenu(client);
 		}
 	}
 	else if (action == MenuAction_End) {
-		
 		CloseHandle(menu);
 	}
 }
-ShowSettingVolumeMenu(client, String:settingsName[], Float:rangeMin, Float:rangeMax, maxMenuEntrys)
+ShowSettingVolumeMenu(client, Handle:flagsRefMenu)
 {
 	new Handle:menu = CreateMenu(HandleSettingVolumeMenu);
-	SetMenuTitle(menu, "Damage Sound Menu\nSelect volume:");
-	
-	new String:buffer[20];
-	
-	for(new i=0;i<=maxMenuEntrys;i++){
 
-		Format(buffer, sizeof(buffer), "%.0f %", (rangeMin+(((rangeMax-rangeMin)/maxMenuEntrys)*i)) * 100);
-		AddMenuItem(menu, settingsName, buffer);
+	SetMenuOptionFlags(menu, MENUFLAG_BUTTON_EXITBACK | GetMenuOptionFlags(flagsRefMenu));
+	SetMenuTitle(menu, "Damage Sound Menu\nSelect volume:");
+
+	new String:buffer[20];
+
+	for (new i; i <= MAX_FLOAT_MENU_ENTRYS; ++i) {
+		Format(buffer, sizeof(buffer), "%.0f%%", 100.0 * i / MAX_FLOAT_MENU_ENTRYS);
+		AddMenuItem(menu, "", buffer);
 	}
-	
+
 	DisplayMenu(menu, client, 90);
 }
-public HandleSettingVolumeMenu(Handle:menu, MenuAction:action, client, param)
+public HandleSettingVolumeMenu(Handle:menu, MenuAction:action, param1, param2)
 {
 	if (action == MenuAction_Select) {
-		
-		decl String:info[32], String:display[32];
+		decl String:display[32];
 		new style;
 		
-		GetMenuItem(menu, param, info, sizeof(info), style, display, sizeof(display));
+		GetMenuItem(menu, param2, "", 0, style, display, sizeof(display));
 
-		g_flClient_Volume[client] = StringToFloat(display);
+		g_flClient_Volume[param1] = StringToFloat(display);
 		if (g_bClientPrefs_Loaded) {
-			SetClientCookie(client, g_cookieVolume, display);
+			SetClientCookie(param1, g_cookieVolume, display);
 		}
 
-		ShowDamageSoundMenu(client);
+		DisplayMenu(menu, param1, 90);
+	}
+	else if (action == MenuAction_Cancel) {
+		if (param2 == MenuCancel_ExitBack) {
+			ShowDamageSoundMenu(param1, GetMenuOptionFlags(menu));
+		}
 	}
 	else if (action == MenuAction_End) {
-		
-		CloseHandle(menu);
+		if (param1 != MenuEnd_Selected) {
+			CloseHandle(menu);
+		}
 	}
 }
 
-ShowSettingSecondsMenu(client, String:settingsName[], Float:rangeMin, Float:rangeMax, maxMenuEntrys)
+ShowSettingSecondsMenu(client, Handle:flagsRefMenu)
 {
 	new Handle:menu = CreateMenu(HandleSettingSecondsMenu);
+
+	SetMenuOptionFlags(menu, MENUFLAG_BUTTON_EXITBACK | GetMenuOptionFlags(flagsRefMenu));
 	SetMenuTitle(menu, "Damage Sound Menu\nSelect pitch reset time:");
-	
+
 	new String:buffer[20];
-	
-	for(new i=0;i<=maxMenuEntrys;i++){
-		
-		Format(buffer, sizeof(buffer), "%.2f seconds", rangeMin+(((rangeMax-rangeMin)/maxMenuEntrys)*i));
-		AddMenuItem(menu, settingsName, buffer);
+
+	for (new i; i <= MAX_FLOAT_MENU_ENTRYS; ++i) {
+		Format(buffer, sizeof(buffer), "%.2f seconds", 5.0 * i / MAX_FLOAT_MENU_ENTRYS);
+		AddMenuItem(menu, "", buffer);
 	}
-	
+
 	DisplayMenu(menu, client, 90);
 }
-public HandleSettingSecondsMenu(Handle:menu, MenuAction:action, client, param)
+public HandleSettingSecondsMenu(Handle:menu, MenuAction:action, param1, param2)
 {
 	if (action == MenuAction_Select) {
-		
-		decl String:info[32], String:display[32];
+		decl String:display[32];
 		new style;
 		
-		GetMenuItem(menu, param, info, sizeof(info), style, display, sizeof(display));
+		GetMenuItem(menu, param2, "", 0, style, display, sizeof(display));
 		
-		g_flClient_PitchTime[client] = StringToFloat(display);
+		g_flClient_PitchTime[param1] = StringToFloat(display);
 		if (g_bClientPrefs_Loaded) {
-			SetClientCookie(client, g_cookiePitchTime, display);
+			SetClientCookie(param1, g_cookiePitchTime, display);
 		}
-		Client_InitializeVariables(client);
+		Client_InitializeVariables(param1);
 
-		ShowDamageSoundMenu(client);
+		DisplayMenu(menu, param1, 90);
+	}
+	else if (action == MenuAction_Cancel) {
+		if (param2 == MenuCancel_ExitBack) {
+			ShowDamageSoundMenu(param1, GetMenuOptionFlags(menu));
+		}
 	}
 	else if (action == MenuAction_End) {
-		
-		CloseHandle(menu);
+		if (param1 != MenuEnd_Selected) {
+			CloseHandle(menu);
+		}
 	}
 }
 
